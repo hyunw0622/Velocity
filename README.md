@@ -1,7 +1,6 @@
 # ⚡ Velocity
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/PaperMC/Velocity/gradle.yml)](https://papermc.io/downloads/velocity)  
-[![Join our Discord](https://img.shields.io/discord/289587909051416579.svg?logo=discord&label=)](https://discord.gg/papermc)
 
 **Velocity**는 탁월한 서버 지원, 확장성, 그리고 유연성을 갖춘 **마인크래프트 서버 프록시**입니다.
 
