@@ -59,11 +59,11 @@ tasks {
 
         val o = options as StandardJavadocDocletOptions
         o.encoding = "UTF-8"
-        o.source = "17"
+        o.source = "21"
 
         o.use()
         o.links(
-            "https://www.slf4j.org/apidocs/",
+            "https://www.javadocs.dev/org.slf4j/slf4j-api/${libs.slf4j.get().version}/",
             "https://guava.dev/releases/${libs.guava.get().version}/api/docs/",
             "https://google.github.io/guice/api-docs/${libs.guice.get().version}/javadoc/",
             "https://docs.oracle.com/en/java/javase/17/docs/api/",

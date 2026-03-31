@@ -24,6 +24,7 @@ import com.mojang.brigadier.suggestion.Suggestion;
 import com.velocitypowered.api.event.connection.PluginMessageEvent;
 import com.velocitypowered.api.event.player.CookieReceiveEvent;
 import com.velocitypowered.api.event.player.PlayerChannelRegisterEvent;
+import com.velocitypowered.api.event.player.PlayerChannelUnregisterEvent;
 import com.velocitypowered.api.event.player.PlayerClientBrandEvent;
 import com.velocitypowered.api.event.player.TabCompleteEvent;
 import com.velocitypowered.api.event.player.configuration.PlayerEnteredConfigurationEvent;
@@ -97,6 +98,8 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * center that joins backend servers with players.
  */
 public class ClientPlaySessionHandler implements MinecraftSessionHandler {
+  private static final boolean BACKPRESSURE_LOG =
+      Boolean.getBoolean("velocity.log-server-backpressure");
 
   private static final Logger logger = LogManager.getLogger(ClientPlaySessionHandler.class);
 
@@ -318,8 +321,12 @@ public class ClientPlaySessionHandler implements MinecraftSessionHandler {
                 new PlayerChannelRegisterEvent(player, ImmutableList.copyOf(channels)));
         backendConn.write(packet.retain());
       } else if (PluginMessageUtil.isUnregister(packet)) {
-        player.getClientsideChannels()
-            .removeAll(PluginMessageUtil.getChannels(0, packet, this.player.getProtocolVersion()));
+        List<ChannelIdentifier> channels =
+            PluginMessageUtil.getChannels(0, packet, this.player.getProtocolVersion());
+        player.getClientsideChannels().removeAll(channels);
+        server.getEventManager()
+            .fireAndForget(
+                new PlayerChannelUnregisterEvent(player, ImmutableList.copyOf(channels)));
         backendConn.write(packet.retain());
       } else if (PluginMessageUtil.isMcBrand(packet)) {
         String brand = PluginMessageUtil.readBrandMessage(packet.content());
@@ -499,6 +506,14 @@ public class ClientPlaySessionHandler implements MinecraftSessionHandler {
   @Override
   public void writabilityChanged() {
     boolean writable = player.getConnection().getChannel().isWritable();
+
+    if (BACKPRESSURE_LOG) {
+      if (writable) {
+        logger.info("{} is writable, will auto-read backend connection data", player);
+      } else {
+        logger.info("{} is not writable, not auto-reading backend connection data", player);
+      }
+    }
 
     if (!writable) {
       // We might have packets queued from the server, so flush them now to free up memory. Make
